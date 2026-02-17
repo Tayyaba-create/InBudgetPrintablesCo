@@ -4,10 +4,20 @@ import { ShoppingBag } from "lucide-react";
 import { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
-const ProductCard = ({ product, index = 0 }: { product: Product; index?: number }) => {
+const ProductCard = ({
+  product,
+  index = 0,
+}: {
+  product: Product;
+  index?: number;
+}) => {
   const { addItem, items } = useCart();
   const inCart = items.some((i) => i.product.id === product.id);
+  const [qty, setQty] = useState<number>(1);
+  const { toast } = useToast();
 
   return (
     <motion.div
@@ -41,24 +51,56 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
           </h3>
         </Link>
         {product.originalPrice && (
-          <span className="font-body text-xs text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
+          <span className="font-body text-xs text-muted-foreground line-through">
+            ${product.originalPrice.toFixed(2)}
+          </span>
         )}
         <div className="mt-2 flex items-center gap-1">
-          <span className="font-body text-xs text-muted-foreground">★ {product.rating}</span>
-          <span className="font-body text-xs text-muted-foreground">({product.reviews})</span>
+          <span className="font-body text-xs text-muted-foreground">
+            ★ {product.rating}
+          </span>
+          <span className="font-body text-xs text-muted-foreground">
+            ({product.reviews})
+          </span>
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <span className="font-display text-xl font-bold text-primary">${product.price.toFixed(2)}</span>
-          <Button
-            size="sm"
-            variant={inCart ? "secondary" : "default"}
-            onClick={() => addItem(product)}
-            disabled={inCart}
-            className="gap-1.5"
-          >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            {inCart ? "Added" : "Add"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <span className="font-display text-xl font-bold text-primary">
+              ${product.price.toFixed(2)}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-md border px-2 py-1">
+              <button
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                -
+              </button>
+              <span className="w-8 text-center font-medium">{qty}</span>
+              <button
+                onClick={() => setQty((q) => q + 1)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                +
+              </button>
+            </div>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => {
+                addItem(product, qty);
+                toast({
+                  title: "Added to cart",
+                  description: `${qty} × ${product.title} added.`,
+                });
+              }}
+              className="gap-1.5"
+            >
+              <ShoppingBag className="h-3.5 w-3.5" />
+              Add
+            </Button>
+          </div>
         </div>
       </div>
     </motion.div>

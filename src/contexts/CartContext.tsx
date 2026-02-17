@@ -8,7 +8,7 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product) => void;
+  addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -23,11 +23,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
+  // legacy single-item add (kept for backward compatibility)
   const addItem = useCallback((product: Product) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev; // digital product, no duplicates
       return [...prev, { product, quantity: 1 }];
+    });
+  }, []);
+
+  // New: add item with quantity (merges if exists)
+  const addItemWithQuantity = useCallback((product: Product, quantity = 1) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.product.id === product.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.product.id === product.id
+            ? { ...i, quantity: i.quantity + quantity }
+            : i,
+        );
+      }
+      return [...prev, { product, quantity }];
     });
   }, []);
 
@@ -57,7 +73,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     <CartContext.Provider
       value={{
         items,
-        addItem,
+        addItem: addItemWithQuantity,
         removeItem,
         updateQuantity,
         clearCart,
